@@ -1,10 +1,11 @@
 import express from 'express';
 import mysql from 'mysql';
 import bodyParser from 'body-parser';
+import multer from 'multer';
+import  Path  from 'path';
+import path from 'path';
 const app = express();
 const port = process.env.PORT || 4000;
-
-//Access json data
 
 app.use(bodyParser.json());
 
@@ -28,7 +29,7 @@ connection.connect((error) => {
     }
 });
 
-//Get  the AllData from database;
+//get API
 
     app.get('/get', function (req, res) {
         const sqlQuery = "SELECT * FROM user";
@@ -42,7 +43,7 @@ connection.connect((error) => {
         });
     });
 
-    //insert API;
+    //INSER API
 
     app.post('/insert',function(req,res){
         const { firstName,lastName,age }= req.body;
@@ -53,36 +54,12 @@ connection.connect((error) => {
             } else {
                 return res.status(200).json({ message: "Successfully inserted" });
             }
-            
 
         })
 
     });
 
-//update API;
-
-    app.put('/update/:id', function (req, res) {
-        const { firstName, lastName, age } = req.body;
-        const getId = req.params.id;
-        const checkID = 'SELECT * FROM user WHERE id = ?';
-        connection.query(checkID, [getId], (idErr, idResult) => {
-            if (idErr) {
-                return res.status(404).json({ error: "Error" });
-            }  else {
-                const updateQuery = 'UPDATE user SET firstName = ?, lastName = ?, age = ? WHERE id = ?';
-                connection.query(updateQuery, [firstName, lastName, age, getId], (updateErr, SuccessUpdate) => {
-                    if (updateErr) {
-                        res.status(404).json({ error: "Error" });
-                    } else {
-                        res.status(200).json({ message: "Successfully updated" });
-                    }
-                });
-            }
-        });
-    });
-
-    //Delete API;
-
+    //DELETE API
     app.delete('/delete/:id',function(req,res){
         const ID = req.params.id;
         const getquery = 'SELECT * FROM user WHERE id = ?';
@@ -91,7 +68,7 @@ connection.connect((error) => {
                 return res.status(404).json({ error:"error"});
             } else if(result.length ===0){
                 res.status(303).json({
-                    error:"Id is not found"
+                    errror:"Id is not found"
                 })
             } else{
                 const deleteQuery = 'DELETE FROM user WHERE id = ?';
@@ -112,6 +89,51 @@ connection.connect((error) => {
         })
     })
 
+    //UPDATE API
+    app.put('/update/:id', function (req, res) {
+        const { firstName, lastName, age } = req.body;
+        const getId = req.params.id;
+        const checkID = 'SELECT * FROM user WHERE id = ?';
+    
+        connection.query(checkID, [getId], (idErr, idResult) => {
+            if (idErr) {
+                return res.status(404).json({ error: "Error" });
+            }  else {
+                const updateQuery = 'UPDATE user SET firstName = ?, lastName = ?, age = ? WHERE id = ?';
+                connection.query(updateQuery, [firstName, lastName, age, getId], (updateErr, SuccessUpdate) => {
+                    if (updateErr) {
+                        res.status(404).json({ error: "Error" });
+                    } else {
+                        res.status(200).json({ message: "Successfully updated" });
+                    }
+                });
+            }
+        });
+    });
+
+
+    //FILE UPLOAD API;
+    
+    //cb- callBack
+    //uploadFiles ->Foldername->when you upload files are stored in this folder
+    const storage = multer.diskStorage({
+        destination: function (req, file, cb) {
+            cb(null, 'uploadFiles'); 
+        },
+        filename: function (req, file, cb) {
+        cb(null, `${file.fieldname}-${Date.now()}${path.extname(file.originalname)}`);
+        },
+      });
       
-  
+//multer use and function calling
+
+    const upload= multer({storage:storage});
+
+    //file this name key inputfield of name.
+
+    app.post('/upload',upload.single('file'),function(req,res){
+        return res.status(200).json({message:'successfully uploaded'})
+
+    })
+    
 
